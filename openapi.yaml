@@ -5,15 +5,73 @@ info:
   description: Tài liệu API chi tiết cho ứng dụng gợi ý lộ trình học tập cá nhân hóa.
 servers:
   - url: http://localhost:5001/api/v1
-    description: Development Server (máy local)
+    description: Development server
   - url: https://ai-backend-roadmap.onrender.com/api/v1
-    description: Production Server (trên Render)
+    description: Production Server
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Email đã tồn tại.
+    UserInput:
+      type: object
+      properties:
+        email:
+          type: string
+          example: user@example.com
+        password:
+          type: string
+          example: password123
+    UserProfileUpdate:
+      type: object
+      properties:
+        learning_style:
+          type: string
+          enum: [visual, practical, reading, auditory]
+          example: visual
+        weekly_goal:
+          type: string
+          enum: [casual, serious, intensive]
+          example: intensive
+    RoadmapInput:
+      type: object
+      properties:
+        skills:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string, example: 'React' }
+              level: { type: string, example: 'Cơ bản' }
+        goal:
+          type: string
+          example: Frontend Developer
+        timeline:
+          type: string
+          example: 4 tháng
+        hours:
+          type: number
+          example: 15
+    RoadmapResult:
+      type: object
+      properties:
+        reactFlowData: { type: object }
+        roadmap_details: { type: object }
+    SavedRoadmap:
+      type: object
+      properties:
+        _id: { type: string, example: '60d5f4f77c3d4a001f8e8b1b' }
+        inputs: { type: object }
+        result: { type: object }
+        created_at: { type: string, format: date-time }
 security:
   - bearerAuth: []
 
@@ -25,7 +83,7 @@ tags:
   - name: Suggestions
     description: Các API gợi ý sử dụng AI
   - name: Admin
-    description: Các API quản trị hệ thống (yêu cầu quyền Admin)
+    description: Các API quản trị hệ thống
 
 paths:
   /auth/register:
@@ -37,13 +95,24 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                email: { type: string, example: user@example.com }
-                password: { type: string, example: password123 }
+              $ref: '#/components/schemas/UserInput'
       responses:
-        "201": { description: Đăng ký thành công }
-        "400": { description: Email đã tồn tại }
+        '201':
+          description: Đăng ký thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Đăng ký thành công!' }
+                  userId: { type: string }
+                  token: { type: string }
+        '400':
+          description: Email đã tồn tại
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /auth/login:
     post:
@@ -54,13 +123,23 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                email: { type: string, example: user@example.com }
-                password: { type: string, example: password123 }
+              $ref: '#/components/schemas/UserInput'
       responses:
-        "200": { description: Đăng nhập thành công, trả về token }
-        "401": { description: Sai email hoặc mật khẩu }
+        '200':
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Đăng nhập thành công!' }
+                  token: { type: string }
+        '401':
+          description: Sai email hoặc mật khẩu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /auth/me:
     get:
@@ -69,8 +148,10 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200": { description: Thông tin người dùng }
-        "401": { description: Chưa đăng nhập }
+        '200':
+          description: Thông tin người dùng
+        '401':
+          description: Chưa đăng nhập
 
   /auth/me/profile:
     put:
@@ -83,14 +164,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                learning_style:
-                  { type: string, enum: [visual, practical, reading, auditory] }
-                weekly_goal:
-                  { type: string, enum: [casual, serious, intensive] }
+              $ref: '#/components/schemas/UserProfileUpdate'
       responses:
-        "200": { description: Cập nhật thành công }
+        '200':
+          description: Cập nhật thành công
 
   /auth/me/password:
     put:
@@ -108,8 +185,8 @@ paths:
                 currentPassword: { type: string }
                 newPassword: { type: string }
       responses:
-        "200": { description: Đổi mật khẩu thành công }
-        "401": { description: Mật khẩu hiện tại không đúng }
+        '200':
+          description: Đổi mật khẩu thành công
 
   /roadmaps/generate:
     post:
@@ -122,15 +199,16 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                skills: { type: array, items: { type: object } }
-                goal: { type: string }
-                timeline: { type: string }
-                hours: { type: number }
+              $ref: '#/components/schemas/RoadmapInput'
       responses:
-        "201": { description: Tạo và lưu lộ trình thành công }
-        "500": { description: Lỗi từ AI hoặc server }
+        '201':
+          description: Tạo và lưu lộ trình thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedRoadmap'
+        '500':
+          description: Lỗi từ AI hoặc server
 
   /roadmaps:
     get:
@@ -139,7 +217,8 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200": { description: Mảng chứa lịch sử lộ trình }
+        '200':
+          description: Mảng chứa lịch sử lộ trình
 
   /roadmaps/{id}:
     get:
@@ -153,8 +232,10 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        "200": { description: Dữ liệu chi tiết của lộ trình }
-        "404": { description: Không tìm thấy }
+        '200':
+          description: Dữ liệu chi tiết của lộ trình
+        '404':
+          description: Không tìm thấy
     delete:
       summary: Xóa một lộ trình
       tags: [Roadmaps]
@@ -166,7 +247,8 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        "200": { description: Xóa thành công }
+        '200':
+          description: Xóa thành công
     put:
       summary: Lưu lại lộ trình đã sửa
       tags: [Roadmaps]
@@ -182,9 +264,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              $ref: '#/components/schemas/RoadmapResult'
       responses:
-        "200": { description: Cập nhật thành công }
+        '200':
+          description: Cập nhật thành công
 
   /roadmaps/review:
     post:
@@ -198,15 +281,20 @@ paths:
           application/json:
             schema:
               type: object
+              properties:
+                original_roadmap: { type: object }
+                modified_roadmap: { type: object }
       responses:
-        "200": { description: Phản hồi từ AI }
+        '200':
+          description: Phản hồi từ AI
 
   /suggestions/goals:
     get:
       summary: Lấy danh sách mục tiêu nghề nghiệp
       tags: [Suggestions]
       responses:
-        "200": { description: Mảng chứa các mục tiêu }
+        '200':
+          description: Mảng chứa các mục tiêu
 
   /suggestions/skills:
     get:
@@ -220,7 +308,8 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        "200": { description: Mảng chứa các kỹ năng gợi ý }
+        '200':
+          description: Mảng chứa các kỹ năng gợi ý
 
   /admin/logs:
     get:
@@ -229,8 +318,10 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200": { description: Mảng chứa các log }
-        "403": { description: Không có quyền }
+        '200':
+          description: Mảng chứa các log
+        '403':
+          description: Không có quyền
 
   /admin/users:
     get:
@@ -239,5 +330,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200": { description: Mảng chứa các người dùng }
-        "403": { description: Không có quyền }
+        '200':
+          description: Mảng chứa các người dùng
+        '403':
+          description: Không có quyền
