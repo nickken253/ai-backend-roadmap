@@ -1,0 +1,241 @@
+openapi: 3.0.0
+info:
+  title: API cho Hệ thống Gợi ý Lộ trình Học tập AI
+  version: 1.0.0
+  description: Tài liệu API chi tiết cho ứng dụng gợi ý lộ trình học tập cá nhân hóa.
+servers:
+  - url: http://localhost:5001/api/v1
+    description: Development server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Auth
+    description: Các API liên quan đến xác thực người dùng
+  - name: Roadmaps
+    description: Các API quản lý lộ trình học tập
+  - name: Suggestions
+    description: Các API gợi ý sử dụng AI
+  - name: Admin
+    description: Các API quản trị hệ thống (yêu cầu quyền Admin)
+
+paths:
+  /auth/register:
+    post:
+      summary: Đăng ký người dùng mới
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, example: user@example.com }
+                password: { type: string, example: password123 }
+      responses:
+        "201": { description: Đăng ký thành công }
+        "400": { description: Email đã tồn tại }
+
+  /auth/login:
+    post:
+      summary: Đăng nhập
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, example: user@example.com }
+                password: { type: string, example: password123 }
+      responses:
+        "200": { description: Đăng nhập thành công, trả về token }
+        "401": { description: Sai email hoặc mật khẩu }
+
+  /auth/me:
+    get:
+      summary: Lấy thông tin cá nhân
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        "200": { description: Thông tin người dùng }
+        "401": { description: Chưa đăng nhập }
+
+  /auth/me/profile:
+    put:
+      summary: Cập nhật profile người dùng
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                learning_style:
+                  { type: string, enum: [visual, practical, reading, auditory] }
+                weekly_goal:
+                  { type: string, enum: [casual, serious, intensive] }
+      responses:
+        "200": { description: Cập nhật thành công }
+
+  /auth/me/password:
+    put:
+      summary: Thay đổi mật khẩu
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentPassword: { type: string }
+                newPassword: { type: string }
+      responses:
+        "200": { description: Đổi mật khẩu thành công }
+        "401": { description: Mật khẩu hiện tại không đúng }
+
+  /roadmaps/generate:
+    post:
+      summary: Tạo lộ trình mới bằng AI
+      tags: [Roadmaps]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                skills: { type: array, items: { type: object } }
+                goal: { type: string }
+                timeline: { type: string }
+                hours: { type: number }
+      responses:
+        "201": { description: Tạo và lưu lộ trình thành công }
+        "500": { description: Lỗi từ AI hoặc server }
+
+  /roadmaps:
+    get:
+      summary: Lấy lịch sử lộ trình
+      tags: [Roadmaps]
+      security:
+        - bearerAuth: []
+      responses:
+        "200": { description: Mảng chứa lịch sử lộ trình }
+
+  /roadmaps/{id}:
+    get:
+      summary: Lấy chi tiết lộ trình
+      tags: [Roadmaps]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Dữ liệu chi tiết của lộ trình }
+        "404": { description: Không tìm thấy }
+    delete:
+      summary: Xóa một lộ trình
+      tags: [Roadmaps]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Xóa thành công }
+    put:
+      summary: Lưu lại lộ trình đã sửa
+      tags: [Roadmaps]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200": { description: Cập nhật thành công }
+
+  /roadmaps/review:
+    post:
+      summary: Nhờ AI đánh giá lộ trình
+      tags: [Roadmaps]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200": { description: Phản hồi từ AI }
+
+  /suggestions/goals:
+    get:
+      summary: Lấy danh sách mục tiêu nghề nghiệp
+      tags: [Suggestions]
+      responses:
+        "200": { description: Mảng chứa các mục tiêu }
+
+  /suggestions/skills:
+    get:
+      summary: Gợi ý kỹ năng
+      tags: [Suggestions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: goal
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Mảng chứa các kỹ năng gợi ý }
+
+  /admin/logs:
+    get:
+      summary: (Admin) Lấy danh sách logs
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        "200": { description: Mảng chứa các log }
+        "403": { description: Không có quyền }
+
+  /admin/users:
+    get:
+      summary: (Admin) Lấy danh sách người dùng
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        "200": { description: Mảng chứa các người dùng }
+        "403": { description: Không có quyền }
