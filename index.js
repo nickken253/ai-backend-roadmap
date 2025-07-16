@@ -20,6 +20,23 @@ app.use(cors());
 app.use(express.json());
 // ✨ [MỚI] Tải file openapi.yaml
 const swaggerDocument = YAML.load(path.join(__dirname, "openapi.yaml"));
+if (process.env.NODE_ENV === "production") {
+  // Nếu đang chạy trên môi trường production (Render)
+  swaggerDocument.servers = [
+    {
+      url: "https://ai-backend-roadmap.onrender.com/api/v1",
+      description: "Production Server",
+    },
+  ];
+} else {
+  // Nếu đang chạy ở môi trường local
+  swaggerDocument.servers = [
+    {
+      url: `http://localhost:${process.env.PORT || 5000}/api/v1`,
+      description: "Development Server",
+    },
+  ];
+}
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
@@ -28,8 +45,10 @@ mongoose
   })
   .catch((err) => console.error("Lỗi kết nối MongoDB:", err));
 
-app.get('/', (req, res) => {
-    res.send('Backend Server đang hoạt động! Truy cập /api-docs để xem tài liệu API.');
+app.get("/", (req, res) => {
+  res.send(
+    "Backend Server đang hoạt động! Truy cập /api-docs để xem tài liệu API."
+  );
 });
 
 // ✨ [MỚI] Route cho trang tài liệu Swagger

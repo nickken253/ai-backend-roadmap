@@ -5,7 +5,9 @@ info:
   description: Tài liệu API chi tiết cho ứng dụng gợi ý lộ trình học tập cá nhân hóa.
 servers:
   - url: http://localhost:5001/api/v1
-    description: Development server
+    description: Development Server (máy local)
+  - url: https://ai-backend-roadmap.onrender.com/api/v1
+    description: Production Server (trên Render)
 components:
   securitySchemes:
     bearerAuth:
