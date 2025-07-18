@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
+const { ROLES } = require('../config/constants');
 
 const protect = async (req, res, next) => {
     let token;
@@ -28,7 +29,7 @@ const protect = async (req, res, next) => {
 };
 
 const admin = (req, res, next) => {
-    if (req.user && req.user.role === 'admin') {
+    if (req.user && req.user.role === ROLES.ADMIN) {
         next();
     } else {
         res.status(403).json({ message: 'Not authorized as an admin' }); // 403 Forbidden

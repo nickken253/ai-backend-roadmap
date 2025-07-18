@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const { ROLES, PROFILE_OPTIONS } = require('../config/constants');
 
 // FIX: Thêm _id vào schema của topic để dễ dàng truy vấn
 const resourceSchema = new mongoose.Schema(
@@ -58,18 +59,18 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "admin"],
-      default: "user",
+      enum: Object.values(ROLES),
+      default: ROLES.USER
     },
     profile: {
       learning_style: {
         type: String,
-        enum: ["visual", "practical", "reading", "auditory"],
+        enum: PROFILE_OPTIONS.LEARNING_STYLES,
         default: "practical",
       },
       weekly_goal: {
         type: String,
-        enum: ["casual", "serious", "intensive"],
+        enum: PROFILE_OPTIONS.WEEKLY_GOALS,
         default: "serious",
       },
       preferred_languages: {
@@ -91,7 +92,7 @@ userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
     return next();
   }
-  const salt = await bcrypt.genSalt(10);
+  const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_SALT_ROUNDS));
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });

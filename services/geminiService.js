@@ -23,7 +23,7 @@ function cleanAndParseJson(text) {
 
 async function callGeminiAPI(prompt) {
     const apiKey = process.env.GEMINI_API_KEY;
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const apiUrl = `${process.env.GEMINI_API_URL}?key=${apiKey}`;
     try {
         const response = await axios.post(apiUrl, {
             contents: [{ parts: [{ text: prompt }] }]
