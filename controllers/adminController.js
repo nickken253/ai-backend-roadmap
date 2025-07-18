@@ -6,7 +6,8 @@ const User = require('../models/userModel');
 const getPromptLogs = async (req, res) => {
     try {
         // Lấy tất cả log và sắp xếp theo ngày tạo mới nhất
-        const logs = await PromptLog.find({}).sort({ createdAt: -1 }).limit(100); // Giới hạn 100 log gần nhất
+        const limit = parseInt(process.env.PAGINATION_LIMIT) || 100; // Sử dụng biến môi trường
+        const logs = await PromptLog.find({}).sort({ createdAt: -1 }).limit(limit);
         res.json(logs);
     } catch (error) {
         res.status(500).json({ message: "Lỗi server khi lấy logs." });

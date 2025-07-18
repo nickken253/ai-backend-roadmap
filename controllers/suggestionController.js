@@ -20,10 +20,10 @@ const suggestSkills = async (req, res) => {
 
     await PromptLog.create({
       user_id: userId,
-      log_type: "suggest_skills",
+      log_type: LOG_TYPES.SUGGEST_SKILLS,
       prompt_sent: prompt,
       raw_response: JSON.stringify(skills),
-      status: "SUCCESS",
+      status: LOG_STATUS.SUCCESS,
       duration_ms: durationMs,
     });
     res.json({ skills });
@@ -31,9 +31,9 @@ const suggestSkills = async (req, res) => {
     const durationMs = Date.now() - startTime;
     await PromptLog.create({
       user_id: userId,
-      log_type: "suggest_skills",
+      log_type: LOG_TYPES.SUGGEST_SKILLS,
       prompt_sent: prompt,
-      status: "FAILED",
+      status: LOG_STATUS.FAILED,
       error_message: error.message,
       duration_ms: durationMs,
     });

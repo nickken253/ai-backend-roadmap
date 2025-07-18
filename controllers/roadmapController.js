@@ -86,11 +86,11 @@ const generateRoadmap = async (req, res) => {
 
     await PromptLog.create({
       user_id: user._id,
-      log_type: "generate",
+      log_type: LOG_TYPES.GENERATE,
       roadmap_id: savedRoadmap._id,
       prompt_sent: prompt,
       raw_response: JSON.stringify(result),
-      status: "SUCCESS",
+      status: LOG_STATUS.SUCCESS,
       duration_ms: durationMs,
     });
 
@@ -100,9 +100,9 @@ const generateRoadmap = async (req, res) => {
     const durationMs = Date.now() - startTime;
     await PromptLog.create({
       user_id: userId,
-      log_type: "generate",
+      log_type: LOG_TYPES.GENERATE,
       prompt_sent: prompt,
-      status: "FAILED",
+      status: LOG_STATUS.FAILED,
       error_message: error.message,
       duration_ms: durationMs,
     });
@@ -215,10 +215,10 @@ const reviewRoadmap = async (req, res) => {
 
     await PromptLog.create({
       user_id: userId,
-      log_type: "review", // Phân loại log
+      log_type: LOG_TYPES.REVIEW, // Phân loại log
       prompt_sent: prompt,
       raw_response: JSON.stringify(result),
-      status: "SUCCESS",
+      status: LOG_STATUS.SUCCESS,
       duration_ms: durationMs,
     });
 
@@ -227,9 +227,9 @@ const reviewRoadmap = async (req, res) => {
     const durationMs = Date.now() - startTime;
     await PromptLog.create({
       user_id: userId,
-      log_type: "review",
+      log_type: LOG_TYPES.REVIEW,
       prompt_sent: prompt,
-      status: "FAILED",
+      status: LOG_STATUS.FAILED,
       error_message: error.message,
       duration_ms: durationMs,
     });

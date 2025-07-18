@@ -5,11 +5,6 @@ const generateToken = require("../utils/generateToken");
 // @route   POST /api/v1/auth/register
 const registerUser = async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res
-      .status(400)
-      .json({ message: "Vui lòng cung cấp email và mật khẩu." });
-  }
 
   const userExists = await User.findOne({ email });
   if (userExists) {
@@ -83,14 +78,14 @@ const updateUserProfile = async (req, res) => {
 const changePassword = async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
-  // Kiểm tra dữ liệu đầu vào
-  if (!currentPassword || !newPassword) {
-    return res
-      .status(400)
-      .json({
-        message: "Vui lòng cung cấp mật khẩu hiện tại và mật khẩu mới.",
-      });
-  }
+  // // Kiểm tra dữ liệu đầu vào
+  // if (!currentPassword || !newPassword) {
+  //   return res
+  //     .status(400)
+  //     .json({
+  //       message: "Vui lòng cung cấp mật khẩu hiện tại và mật khẩu mới.",
+  //     });
+  // }
 
   // Tìm người dùng trong DB
   const user = await User.findById(req.user._id);
