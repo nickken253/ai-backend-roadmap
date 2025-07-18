@@ -1,0 +1,41 @@
+const ROLES = Object.freeze({
+    ADMIN: 'admin',
+    USER: 'user',
+});
+
+const LOG_TYPES = Object.freeze({
+    GENERATE: 'generate',
+    REVIEW: 'review',
+    SUGGEST_SKILLS: 'suggest_skills',
+});
+
+const LOG_STATUS = Object.freeze({
+    SUCCESS: 'SUCCESS',
+    FAILED: 'FAILED',
+});
+
+const PROFILE_OPTIONS = Object.freeze({
+    LEARNING_STYLES: ['visual', 'practical', 'reading', 'auditory'],
+    WEEKLY_GOALS: ['casual', 'serious', 'intensive'],
+});
+
+const SUGGESTION_GOALS = Object.freeze([
+    "Backend Developer",
+    "Frontend Developer",
+    "Fullstack Developer",
+    "Data Analyst",
+    "Data Scientist",
+    "DevOps Engineer",
+    "Mobile Developer (iOS/Android)",
+    "QA Engineer"
+]);
+const PASSWORD_MIN_LENGTH = 6;
+
+module.exports = {
+    ROLES,
+    LOG_TYPES,
+    LOG_STATUS,
+    PROFILE_OPTIONS,
+    SUGGESTION_GOALS,
+    PASSWORD_MIN_LENGTH,
+};
