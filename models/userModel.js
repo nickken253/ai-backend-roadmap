@@ -62,6 +62,10 @@ const userSchema = new mongoose.Schema(
       enum: Object.values(ROLES),
       default: ROLES.USER
     },
+    is_active: {
+        type: Boolean,
+        default: true
+    },
     profile: {
       learning_style: {
         type: String,

@@ -1,7 +1,6 @@
-const User = require("../models/userModel");
-const PromptLog = require("../models/promptLogModel");
+const roadmapRepository = require("../repositories/roadmapRepository");
+const promptLogRepository = require("../repositories/promptLogRepository");
 const { callGeminiAPI } = require("../services/geminiService");
-const mongoose = require("mongoose");
 
 // @desc    Tạo lộ trình mới
 // @route   POST /api/v1/roadmaps/generate
@@ -71,20 +70,25 @@ const generateRoadmap = async (req, res) => {
     const result = await callGeminiAPI(prompt);
     const durationMs = Date.now() - startTime;
 
-    const dbUser = await User.findById(user._id);
-    const newRoadmap = {
-      // _id sẽ được Mongoose tự động tạo khi push
-      inputs: userInput,
-      result: result,
-    };
-    dbUser.roadmaps_history.push(newRoadmap);
-    await dbUser.save();
+    // const dbUser = await User.findById(user._id);
+    // const newRoadmap = {
+    //   // _id sẽ được Mongoose tự động tạo khi push
+    //   inputs: userInput,
+    //   result: result,
+    // };
+    // dbUser.roadmaps_history.push(newRoadmap);
+    const newRoadmapData = { inputs: userInput, result: result };
+    const savedRoadmap = await roadmapRepository.addRoadmap(
+      user._id,
+      newRoadmapData
+    );
+    // await dbUser.save();
 
     // Lấy lại lộ trình vừa được tạo để có _id
-    const savedRoadmap =
-      dbUser.roadmaps_history[dbUser.roadmaps_history.length - 1];
+    // const savedRoadmap =
+    //   dbUser.roadmaps_history[dbUser.roadmaps_history.length - 1];
 
-    await PromptLog.create({
+    await promptLogRepository.createLog({
       user_id: user._id,
       log_type: LOG_TYPES.GENERATE,
       roadmap_id: savedRoadmap._id,
@@ -98,7 +102,7 @@ const generateRoadmap = async (req, res) => {
     res.status(201).json(savedRoadmap);
   } catch (error) {
     const durationMs = Date.now() - startTime;
-    await PromptLog.create({
+    await promptLogRepository.createLog({
       user_id: userId,
       log_type: LOG_TYPES.GENERATE,
       prompt_sent: prompt,
@@ -115,12 +119,12 @@ const generateRoadmap = async (req, res) => {
 // @desc    Xem lịch sử lộ trình
 // @route   GET /api/v1/roadmaps
 const getRoadmapHistory = async (req, res) => {
-  const user = await User.findById(req.user._id);
+  const user = await req.user;
   const history = user.roadmaps_history
     .map((r) => ({
       roadmap_id: r._id,
       created_at: r.created_at,
-      career_goal: r.result.career_goal,
+      career_goal: r.result.roadmap_details.career_goal
     }))
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
@@ -130,7 +134,7 @@ const getRoadmapHistory = async (req, res) => {
 // @desc    Xem chi tiết một lộ trình
 // @route   GET /api/v1/roadmaps/:id
 const getRoadmapById = async (req, res) => {
-  const user = await User.findById(req.user._id);
+  const user = await req.user;
   const roadmap = user.roadmaps_history.id(req.params.id);
 
   if (roadmap) {
@@ -143,13 +147,12 @@ const getRoadmapById = async (req, res) => {
 // @desc    Xóa một lộ trình
 // @route   DELETE /api/v1/roadmaps/:id
 const deleteRoadmap = async (req, res) => {
-  const user = await User.findById(req.user._id);
+  const user = await req.user;
   user.roadmaps_history.pull({ _id: req.params.id });
   await user.save();
   res.json({ message: "Đã xóa lộ trình." });
 };
 
-// ✨ [MỚI]
 // @desc    Nhờ AI đánh giá sự thay đổi của lộ trình
 // @route   POST /api/v1/roadmaps/review
 const reviewRoadmap = async (req, res) => {
@@ -213,7 +216,7 @@ const reviewRoadmap = async (req, res) => {
     const result = await callGeminiAPI(prompt);
     const durationMs = Date.now() - startTime;
 
-    await PromptLog.create({
+    await promptLogRepository.createLog({
       user_id: userId,
       log_type: LOG_TYPES.REVIEW, // Phân loại log
       prompt_sent: prompt,
@@ -225,7 +228,7 @@ const reviewRoadmap = async (req, res) => {
     res.json(result);
   } catch (error) {
     const durationMs = Date.now() - startTime;
-    await PromptLog.create({
+    await promptLogRepository.createLog({
       user_id: userId,
       log_type: LOG_TYPES.REVIEW,
       prompt_sent: prompt,
@@ -239,20 +242,18 @@ const reviewRoadmap = async (req, res) => {
   }
 };
 
-// ✨ [MỚI]
 // @desc    Lưu lại toàn bộ lộ trình đã chỉnh sửa
 // @route   PUT /api/v1/roadmaps/:id
 const updateRoadmap = async (req, res) => {
   const { id } = req.params;
   const updatedResult = req.body; // Toàn bộ object result mới
-  const user = await User.findById(req.user._id);
+  const user = await req.user;
 
   const roadmap = user.roadmaps_history.id(id);
   if (!roadmap) {
     return res.status(404).json({ message: "Không tìm thấy lộ trình." });
   }
 
-  // Ghi đè toàn bộ object result
   roadmap.result = updatedResult;
 
   await user.save();

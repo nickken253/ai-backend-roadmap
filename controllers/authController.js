@@ -1,4 +1,4 @@
-const User = require("../models/userModel");
+const userRepository = require("../repositories/userRepository");
 const generateToken = require("../utils/generateToken");
 
 // @desc    Đăng ký người dùng mới
@@ -6,12 +6,12 @@ const generateToken = require("../utils/generateToken");
 const registerUser = async (req, res) => {
   const { email, password } = req.body;
 
-  const userExists = await User.findOne({ email });
+  const userExists = await userRepository.findByEmail(email);
   if (userExists) {
     return res.status(400).json({ message: "Email đã tồn tại." });
   }
 
-  const user = await User.create({ email, password });
+  const user = await userRepository.create({ email, password });
   if (user) {
     res.status(201).json({
       message: "Đăng ký thành công!",
@@ -27,9 +27,17 @@ const registerUser = async (req, res) => {
 // @route   POST /api/v1/auth/login
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email });
+  const user = await userRepository.findByEmail(email);
 
   if (user && (await user.matchPassword(password))) {
+    if (!user.is_active) {
+      return res
+        .status(403)
+        .json({
+          message:
+            "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
+        });
+    }
     res.json({
       message: "Đăng nhập thành công!",
       token: generateToken(user._id),
@@ -46,6 +54,7 @@ const getUserProfile = async (req, res) => {
   res.json({
     id: req.user._id,
     email: req.user.email,
+    ...(req.user.role === 'admin' && { role: req.user.role }),
     profile: req.user.profile,
     created_at: req.user.created_at,
   });
@@ -54,7 +63,7 @@ const getUserProfile = async (req, res) => {
 // @desc    Cập nhật profile người dùng
 // @route   PUT /api/v1/auth/me/profile
 const updateUserProfile = async (req, res) => {
-  const user = await User.findById(req.user._id);
+  const user = await userRepository.findById(req.user._id);
 
   if (user) {
     user.profile.learning_style =
@@ -88,7 +97,7 @@ const changePassword = async (req, res) => {
   // }
 
   // Tìm người dùng trong DB
-  const user = await User.findById(req.user._id);
+  const user = await userRepository.findById(req.user._id);
 
   // Kiểm tra xem người dùng có tồn tại và mật khẩu hiện tại có khớp không
   if (user && (await user.matchPassword(currentPassword))) {
