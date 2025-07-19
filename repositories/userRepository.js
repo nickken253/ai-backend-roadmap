@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const crypto = require('crypto');
 
 const findByEmail = (email) => {
   return User.findOne({ email });

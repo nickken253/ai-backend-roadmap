@@ -36,4 +36,12 @@ const admin = (req, res, next) => {
     }
 };
 
-module.exports = { protect, admin };
+const isVerified = (req, res, next) => {
+    if (req.user && req.user.is_verified) {
+        next();
+    } else {
+        res.status(403).json({ message: 'Vui lòng xác thực email của bạn để sử dụng chức năng này.' });
+    }
+};
+
+module.exports = { protect, admin, isVerified };

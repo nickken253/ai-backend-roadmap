@@ -6,7 +6,6 @@ const sendEmail = require("../utils/emailService");
 // @route   POST /api/v1/auth/register
 const registerUser = async (req, res) => {
   const { email, password } = req.body;
-
   const userExists = await userRepository.findByEmail(email);
   if (userExists) {
     return res.status(400).json({ message: "Email đã tồn tại." });
@@ -15,31 +14,52 @@ const registerUser = async (req, res) => {
   const user = await userRepository.create({ email, password });
 
   if (user) {
-    try {
-      const verificationToken = user.createVerificationToken();
-      await userRepository.save(user);
-      const verificationURL = `${req.protocol}://${req.get(
-        "host"
-      )}/api/v1/auth/verify-email/${verificationToken}`;
+    // Chỉ tạo token khi đăng ký, không gửi email ngay lập tức.
+    user.createVerificationToken(); // Đoạn này có thể sẽ hơi thừa
+    await userRepository.save(user);
 
-      await sendEmail({
-        email: user.email,
-        subject: "Xác thực tài khoản của bạn",
-        template: "verificationEmail", // Tên template
-        payload: { verificationURL }, // Dữ liệu để điền vào template
-      });
-      res.status(201).json({
-        message:
-          "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.",
-      });
-    } catch (err) {
-      console.error(err);
-      return res.status(201).json({
-        message: "Đăng ký thành công, nhưng không thể gửi email xác thực.",
-      });
-    }
+    res.status(201).json({
+      message: "Đăng ký thành công. Bây giờ bạn có thể đăng nhập.",
+      userId: user._id,
+    });
   } else {
     res.status(400).json({ message: "Dữ liệu người dùng không hợp lệ." });
+  }
+};
+
+// API chuyên dụng để gửi email xác thực
+// @desc    Gửi (lại) email xác thực
+// @route   POST /api/v1/auth/send-verification
+const sendVerificationEmail = async (req, res) => {
+  const user = await userRepository.findById(req.user._id);
+
+  if (!user) {
+    return res.status(404).json({ message: "Không tìm thấy người dùng." });
+  }
+
+  if (user.is_verified) {
+    return res.status(400).json({ message: "Tài khoản này đã được xác thực." });
+  }
+
+  try {
+    const verificationToken = user.createVerificationToken();
+    await userRepository.save(user);
+
+    const verificationURL = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+
+    await sendEmail({
+      email: user.email,
+      subject: "Xác thực tài khoản của bạn",
+      template: "verificationEmail",
+      payload: { verificationURL },
+    });
+
+    res.status(200).json({
+      message: "Email xác thực đã được gửi. Vui lòng kiểm tra hộp thư của bạn.",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi khi gửi email xác thực." });
   }
 };
 
@@ -91,9 +111,7 @@ const forgotPassword = async (req, res) => {
   await userRepository.save(user);
 
   try {
-    const resetURL = `${req.protocol}://${req.get(
-      "host"
-    )}/api/v1/auth/reset-password/${resetToken}`;
+    const resetURL = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
     await sendEmail({
       email: user.email,
       subject: "Yêu cầu đặt lại mật khẩu",
@@ -199,4 +217,5 @@ module.exports = {
   verifyEmail,
   forgotPassword,
   resetPassword,
+  sendVerificationEmail,
 };
