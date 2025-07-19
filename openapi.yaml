@@ -361,7 +361,7 @@ paths:
 
   /admin/users/{id}/status:
     put:
-      summary: (Admin) Cập nhật trạng thái người dùng
+      summary: (Admin) Cập nhật trạng thái người dùng (Vô hiệu hóa/Kích hoạt)
       tags: [Admin]
       security:
         - bearerAuth: []

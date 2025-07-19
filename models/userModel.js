@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const { ROLES, PROFILE_OPTIONS } = require('../config/constants');
+const crypto = require('crypto');
+const { ROLES, PROFILE_OPTIONS } = require("../config/constants");
 
 // FIX: Thêm _id vào schema của topic để dễ dàng truy vấn
 const resourceSchema = new mongoose.Schema(
@@ -60,11 +61,18 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: Object.values(ROLES),
-      default: ROLES.USER
+      default: ROLES.USER,
     },
+    is_verified: {
+      type: Boolean,
+      default: false,
+    },
+    verification_token: String,
+    password_reset_token: String,
+    password_reset_expires: Date,
     is_active: {
-        type: Boolean,
-        default: true
+      type: Boolean,
+      default: true,
     },
     profile: {
       learning_style: {
@@ -91,6 +99,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
 // Mã hóa mật khẩu trước khi lưu
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
@@ -104,6 +113,19 @@ userSchema.pre("save", async function (next) {
 // Thêm phương thức để so sánh mật khẩu
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+userSchema.methods.createVerificationToken = function() {
+    const token = crypto.randomBytes(32).toString('hex');
+    this.verification_token = crypto.createHash('sha256').update(token).digest('hex');
+    return token;
+};
+
+userSchema.methods.createPasswordResetToken = function() {
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    this.password_reset_token = crypto.createHash('sha256').update(resetToken).digest('hex');
+    this.password_reset_expires = Date.now() + TOKEN_EXPIRY.PASSWORD_RESET;
+    return resetToken;
 };
 
 const User = mongoose.model("User", userSchema);

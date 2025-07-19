@@ -1,5 +1,6 @@
 const userRepository = require("../repositories/userRepository");
 const generateToken = require("../utils/generateToken");
+const sendEmail = require("../utils/emailService");
 
 // @desc    Đăng ký người dùng mới
 // @route   POST /api/v1/auth/register
@@ -12,12 +13,31 @@ const registerUser = async (req, res) => {
   }
 
   const user = await userRepository.create({ email, password });
+
   if (user) {
-    res.status(201).json({
-      message: "Đăng ký thành công!",
-      userId: user._id,
-      token: generateToken(user._id),
-    });
+    try {
+      const verificationToken = user.createVerificationToken();
+      await userRepository.save(user);
+      const verificationURL = `${req.protocol}://${req.get(
+        "host"
+      )}/api/v1/auth/verify-email/${verificationToken}`;
+
+      await sendEmail({
+        email: user.email,
+        subject: "Xác thực tài khoản của bạn",
+        template: "verificationEmail", // Tên template
+        payload: { verificationURL }, // Dữ liệu để điền vào template
+      });
+      res.status(201).json({
+        message:
+          "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.",
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(201).json({
+        message: "Đăng ký thành công, nhưng không thể gửi email xác thực.",
+      });
+    }
   } else {
     res.status(400).json({ message: "Dữ liệu người dùng không hợp lệ." });
   }
@@ -31,12 +51,10 @@ const loginUser = async (req, res) => {
 
   if (user && (await user.matchPassword(password))) {
     if (!user.is_active) {
-      return res
-        .status(403)
-        .json({
-          message:
-            "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
-        });
+      return res.status(403).json({
+        message:
+          "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
+      });
     }
     res.json({
       message: "Đăng nhập thành công!",
@@ -47,6 +65,68 @@ const loginUser = async (req, res) => {
   }
 };
 
+const verifyEmail = async (req, res) => {
+  const user = await userRepository.findByVerificationToken(req.params.token);
+  if (!user) {
+    return res
+      .status(400)
+      .json({ message: "Token không hợp lệ hoặc đã hết hạn." });
+  }
+  user.is_verified = true;
+  user.verification_token = undefined;
+  await userRepository.save(user);
+  res.status(200).json({ message: "Xác thực email thành công!" });
+};
+
+const forgotPassword = async (req, res) => {
+  const user = await userRepository.findByEmail(req.body.email);
+  if (!user) {
+    return res.status(200).json({
+      message:
+        "Nếu email của bạn tồn tại trong hệ thống, bạn sẽ nhận được link đặt lại mật khẩu.",
+    });
+  }
+
+  const resetToken = user.createPasswordResetToken();
+  await userRepository.save(user);
+
+  try {
+    const resetURL = `${req.protocol}://${req.get(
+      "host"
+    )}/api/v1/auth/reset-password/${resetToken}`;
+    await sendEmail({
+      email: user.email,
+      subject: "Yêu cầu đặt lại mật khẩu",
+      template: "passwordResetEmail",
+      payload: { resetURL },
+    });
+    res.status(200).json({
+      message: "Link đặt lại mật khẩu đã được gửi đến email của bạn.",
+    });
+  } catch (err) {
+    user.password_reset_token = undefined;
+    user.password_reset_expires = undefined;
+    await userRepository.save(user);
+    return res
+      .status(500)
+      .json({ message: "Lỗi khi gửi email, vui lòng thử lại." });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const user = await userRepository.findByPasswordResetToken(req.params.token);
+  if (!user) {
+    return res
+      .status(400)
+      .json({ message: "Token không hợp lệ hoặc đã hết hạn." });
+  }
+  user.password = req.body.password;
+  user.password_reset_token = undefined;
+  user.password_reset_expires = undefined;
+  await userRepository.save(user);
+  res.status(200).json({ message: "Đặt lại mật khẩu thành công." });
+};
+
 // @desc    Lấy thông tin cá nhân
 // @route   GET /api/v1/auth/me
 const getUserProfile = async (req, res) => {
@@ -54,7 +134,7 @@ const getUserProfile = async (req, res) => {
   res.json({
     id: req.user._id,
     email: req.user.email,
-    ...(req.user.role === 'admin' && { role: req.user.role }),
+    ...(req.user.role === "admin" && { role: req.user.role }),
     profile: req.user.profile,
     created_at: req.user.created_at,
   });
@@ -116,4 +196,7 @@ module.exports = {
   getUserProfile,
   updateUserProfile,
   changePassword,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
 };

@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
+const userRepository = require('../repositories/userRepository');
 const { ROLES } = require('../config/constants');
 
 const protect = async (req, res, next) => {
@@ -14,7 +14,7 @@ const protect = async (req, res, next) => {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
             // Gắn thông tin user vào request (trừ mật khẩu)
-            req.user = await User.findById(decoded.id).select('-password');
+            req.user = await userRepository.findByIdSafe(decoded.id);
             
             next();
         } catch (error) {
