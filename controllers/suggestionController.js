@@ -1,5 +1,6 @@
 const { callGeminiAPI } = require("../services/geminiService");
 const PromptLog = require("../models/promptLogModel"); // Import model
+const { LOG_TYPES, LOG_STATUS } = require("../config/constants");
 
 // @desc    Gợi ý kỹ năng
 // @route   GET /api/v1/suggestions/skills

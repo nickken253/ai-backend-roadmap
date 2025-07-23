@@ -36,6 +36,13 @@ const findByPasswordResetToken = (token) => {
     password_reset_expires: { $gt: Date.now() },
   });
 };
+
+const updateById = (userId, updateData) => {
+  // Sử dụng findByIdAndUpdate để cập nhật trực tiếp trong DB
+  // { new: true } để kết quả trả về là tài liệu đã được cập nhật
+  return User.findByIdAndUpdate(userId, { $set: updateData }, { new: true });
+};
+
 module.exports = {
   findByEmail,
   findById,
@@ -45,4 +52,5 @@ module.exports = {
   findAll,
   findByVerificationToken,
   findByPasswordResetToken,
+  updateById,
 };

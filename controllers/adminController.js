@@ -59,20 +59,40 @@ const getUserById = async (req, res) => {
     }
 };
 
+// const updateUserStatus = async (req, res) => {
+//     try {
+//         const user = await userRepository.findById(req.params.id);
+//         if (user) {
+//             if (typeof req.body.is_active !== 'boolean') {
+//                 return res.status(400).json({ message: "Giá trị is_active phải là true hoặc false." });
+//             }
+//             user.is_active = req.body.is_active;
+//             await userRepository.save(user);
+//             res.json({ message: `Đã cập nhật trạng thái người dùng thành ${user.is_active ? 'hoạt động' : 'bị khóa'}.` });
+//         } else {
+//             res.status(404).json({ message: "Không tìm thấy người dùng." });
+//         }
+//     } catch (error) {
+//         res.status(500).json({ message: "Lỗi server." });
+//     }
+// };
+
 const updateUserStatus = async (req, res) => {
     try {
-        const user = await userRepository.findById(req.params.id);
-        if (user) {
-            if (typeof req.body.is_active !== 'boolean') {
-                return res.status(400).json({ message: "Giá trị is_active phải là true hoặc false." });
-            }
-            user.is_active = req.body.is_active;
-            await userRepository.save(user);
-            res.json({ message: `Đã cập nhật trạng thái người dùng thành ${user.is_active ? 'hoạt động' : 'bị khóa'}.` });
+        if (typeof req.body.is_active !== 'boolean') {
+            return res.status(400).json({ message: "Giá trị is_active phải là true hoặc false." });
+        }
+
+        const updatedUser = await userRepository.updateById(req.params.id, { is_active: req.body.is_active });
+
+        if (updatedUser) {
+            res.json({ message: `Đã cập nhật trạng thái người dùng thành ${updatedUser.is_active ? 'hoạt động' : 'bị khóa'}.` });
         } else {
             res.status(404).json({ message: "Không tìm thấy người dùng." });
         }
     } catch (error) {
+        // Thêm log lỗi để dễ debug hơn
+        console.error("Lỗi khi cập nhật trạng thái người dùng:", error);
         res.status(500).json({ message: "Lỗi server." });
     }
 };

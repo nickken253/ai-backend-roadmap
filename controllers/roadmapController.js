@@ -1,6 +1,7 @@
 const roadmapRepository = require("../repositories/roadmapRepository");
 const promptLogRepository = require("../repositories/promptLogRepository");
 const { callGeminiAPI } = require("../services/geminiService");
+const { LOG_TYPES, LOG_STATUS } = require("../config/constants");
 
 // @desc    Tạo lộ trình mới
 // @route   POST /api/v1/roadmaps/generate

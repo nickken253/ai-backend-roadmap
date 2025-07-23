@@ -152,6 +152,8 @@ const getUserProfile = async (req, res) => {
   res.json({
     id: req.user._id,
     email: req.user.email,
+    is_verified: req.user.is_verified,
+    is_active: req.user.is_active,
     ...(req.user.role === "admin" && { role: req.user.role }),
     profile: req.user.profile,
     created_at: req.user.created_at,
