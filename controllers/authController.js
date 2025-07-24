@@ -45,7 +45,7 @@ const sendVerificationEmail = async (req, res) => {
     const verificationToken = user.createVerificationToken();
     await userRepository.save(user);
 
-    const verificationURL = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+    const verificationURL = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
     await sendEmail({
       email: user.email,
@@ -111,7 +111,7 @@ const forgotPassword = async (req, res) => {
   await userRepository.save(user);
 
   try {
-    const resetURL = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
     await sendEmail({
       email: user.email,
       subject: "Yêu cầu đặt lại mật khẩu",
