@@ -1,6 +1,6 @@
 const { callGeminiAPI } = require("../services/geminiService");
 const PromptLog = require("../models/promptLogModel"); // Import model
-const { LOG_TYPES, LOG_STATUS } = require("../config/constants");
+const { LOG_TYPES, LOG_STATUS, SUGGESTION_GOALS } = require("../config/constants");
 
 // @desc    Gợi ý kỹ năng
 // @route   GET /api/v1/suggestions/skills
@@ -47,16 +47,7 @@ const suggestSkills = async (req, res) => {
 // @desc    Lấy danh sách mục tiêu nghề nghiệp
 // @route   GET /api/v1/suggestions/goals
 const getGoals = (req, res) => {
-  const goals = [
-    "Backend Developer",
-    "Frontend Developer",
-    "Fullstack Developer",
-    "Data Analyst",
-    "Data Scientist",
-    "DevOps Engineer",
-    "Mobile Developer (iOS/Android)",
-    "QA Engineer",
-  ];
+  const goals = SUGGESTION_GOALS;
   res.json({ goals });
 };
 
