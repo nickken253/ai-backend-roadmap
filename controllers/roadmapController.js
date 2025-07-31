@@ -2,6 +2,8 @@ const roadmapRepository = require("../repositories/roadmapRepository");
 const promptLogRepository = require("../repositories/promptLogRepository");
 const { callGeminiAPI } = require("../services/geminiService");
 const { LOG_TYPES, LOG_STATUS } = require("../config/constants");
+const RoadmapCache = require("../models/RoadmapCache");
+const { normalizeInput, createCacheKey } = require("../utils/cacheKey");
 
 // @desc    Tạo lộ trình mới
 // @route   POST /api/v1/roadmaps/generate
@@ -66,6 +68,32 @@ const generateRoadmap = async (req, res) => {
         \`\`\`
     `;
 
+  // 1. Chuẩn hóa đầu vào và tạo cacheKey
+  const normalizedInput = normalizeInput(userInput);
+  const cacheKey = createCacheKey(normalizedInput);
+
+  // 2. Kiểm tra cache
+  let cacheDoc = await RoadmapCache.findById(cacheKey);
+  if (cacheDoc) {
+    // 3a. Nếu Cache Hit: update metadata, trả về kết quả
+    cacheDoc.hit_count += 1;
+    cacheDoc.last_accessed = new Date();
+    await cacheDoc.save();
+
+    // Lưu lịch sử cho user (nếu muốn)
+    const newRoadmapData = {
+      inputs: userInput,
+      result: cacheDoc.roadmap_result,
+    };
+    const savedRoadmap = await roadmapRepository.addRoadmap(
+      user._id,
+      newRoadmapData
+    );
+
+    // Trả về roadmap vừa lưu đầy đủ _id, tránh bị undefined
+    return res.status(201).json(savedRoadmap);
+  }
+
   const startTime = Date.now();
   try {
     const result = await callGeminiAPI(prompt);
@@ -99,6 +127,12 @@ const generateRoadmap = async (req, res) => {
       duration_ms: durationMs,
     });
 
+    await RoadmapCache.create({
+      _id: cacheKey,
+      inputs: normalizedInput,
+      roadmap_result: result,
+    });
+
     // FIX: Trả về toàn bộ object lộ trình vừa lưu, bao gồm cả _id
     res.status(201).json(savedRoadmap);
   } catch (error) {
@@ -125,7 +159,7 @@ const getRoadmapHistory = async (req, res) => {
     .map((r) => ({
       roadmap_id: r._id,
       created_at: r.created_at,
-      career_goal: r.result.roadmap_details.career_goal
+      career_goal: r.result.roadmap_details.career_goal,
     }))
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 

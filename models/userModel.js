@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const crypto = require('crypto');
-const { ROLES, PROFILE_OPTIONS } = require("../config/constants");
+const { ROLES, PROFILE_OPTIONS, TOKEN_EXPIRY } = require("../config/constants");
 
 // FIX: Thêm _id vào schema của topic để dễ dàng truy vấn
 const resourceSchema = new mongoose.Schema(
