@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: API cho Hệ thống Gợi ý Lộ trình Học tập AI
-  version: '1.0.0'
+  version: "1.0.0"
   description: Tài liệu API chi tiết cho ứng dụng gợi ý lộ trình học tập cá nhân hóa.
 servers:
   - url: http://localhost:5001/api/v1
@@ -47,8 +47,8 @@ components:
           items:
             type: object
             properties:
-              name: { type: string, example: 'React' }
-              level: { type: string, example: 'Cơ bản' }
+              name: { type: string, example: "React" }
+              level: { type: string, example: "Cơ bản" }
         goal:
           type: string
           example: Frontend Developer
@@ -61,7 +61,7 @@ components:
     SavedRoadmap:
       type: object
       properties:
-        _id: { type: string, example: '60d5f4f77c3d4a001f8e8b1b' }
+        _id: { type: string, example: "60d5f4f77c3d4a001f8e8b1b" }
         inputs: { type: object }
         result: { type: object }
         created_at: { type: string, format: date-time }
@@ -89,10 +89,72 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserInput'
+              $ref: "#/components/schemas/UserInput"
       responses:
-        '201': { description: Đăng ký thành công }
-        '400': { description: Email đã tồn tại }
+        "201": { description: Đăng ký thành công }
+        "400": { description: Email đã tồn tại }
+
+  /auth/google:
+    get:
+      summary: Bắt đầu đăng nhập với Google
+      tags: [Auth]
+      description: Chuyển hướng người dùng đến trang đăng nhập của Google. Không có response body.
+      responses:
+        "302": { description: Chuyển hướng đến Google. }
+
+  /auth/github:
+    get:
+      summary: Bắt đầu đăng nhập với GitHub
+      tags: [Auth]
+      description: Chuyển hướng người dùng đến trang đăng nhập của GitHub. Không có response body.
+      responses:
+        "302": { description: Chuyển hướng đến GitHub. }
+
+  /auth/link/details:
+    post:
+      summary: Lấy chi tiết để xác nhận liên kết tài khoản
+      tags: [Auth]
+      description: Gửi mergeToken nhận được từ URL để lấy thông tin so sánh giữa tài khoản hiện có và tài khoản mạng xã hội.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkDetailsRequest"
+      responses:
+        "200":
+          description: Trả về thông tin của 2 tài khoản để so sánh.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LinkDetailsResponse"
+        "400":
+          description: Token không được cung cấp.
+        "404":
+          description: Không tìm thấy người dùng từ token.
+
+  /auth/link/complete:
+    post:
+      summary: Hoàn tất liên kết tài khoản
+      tags: [Auth]
+      description: Gửi mergeToken và lựa chọn của người dùng (giữ lại thông tin nào) để hoàn tất việc liên kết và đăng nhập.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkCompleteRequest"
+      responses:
+        "200":
+          description: Liên kết thành công, trả về token đăng nhập cuối cùng.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LinkCompleteResponse"
+        "400":
+          description: Token hoặc lựa chọn không được cung cấp.
+        "404":
+          description: Không tìm thấy người dùng từ token.
 
   /auth/send-verification:
     post:
@@ -101,11 +163,11 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Gửi email thành công
-        '400':
+        "400":
           description: Tài khoản đã được xác thực
-        '401':
+        "401":
           description: Chưa đăng nhập
 
   /auth/login:
@@ -117,10 +179,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserInput'
+              $ref: "#/components/schemas/UserInput"
       responses:
-        '200': { description: Đăng nhập thành công, trả về token }
-        '401': { description: Sai email hoặc mật khẩu }
+        "200": { description: Đăng nhập thành công, trả về token }
+        "401": { description: Sai email hoặc mật khẩu }
 
   /auth/me:
     get:
@@ -129,8 +191,8 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200': { description: Thông tin người dùng }
-        '401': { description: Chưa đăng nhập }
+        "200": { description: Thông tin người dùng }
+        "401": { description: Chưa đăng nhập }
 
   /auth/me/profile:
     put:
@@ -143,9 +205,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserProfileUpdate'
+              $ref: "#/components/schemas/UserProfileUpdate"
       responses:
-        '200': { description: Cập nhật thành công }
+        "200": { description: Cập nhật thành công }
 
   /auth/me/password:
     put:
@@ -163,7 +225,7 @@ paths:
                 currentPassword: { type: string }
                 newPassword: { type: string }
       responses:
-        '200': { description: Đổi mật khẩu thành công }
+        "200": { description: Đổi mật khẩu thành công }
 
   /auth/verify-email/{token}:
     get:
@@ -175,8 +237,8 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        '200': { description: Xác thực thành công }
-        '400': { description: Token không hợp lệ }
+        "200": { description: Xác thực thành công }
+        "400": { description: Token không hợp lệ }
 
   /auth/forgot-password:
     post:
@@ -189,9 +251,9 @@ paths:
             schema:
               type: object
               properties:
-                email: { type: string, example: 'user@example.com' }
+                email: { type: string, example: "user@example.com" }
       responses:
-        '200': { description: Đã gửi yêu cầu }
+        "200": { description: Đã gửi yêu cầu }
 
   /auth/reset-password/{token}:
     put:
@@ -209,10 +271,10 @@ paths:
             schema:
               type: object
               properties:
-                password: { type: string, example: 'newpassword456' }
+                password: { type: string, example: "newpassword456" }
       responses:
-        '200': { description: Đặt lại mật khẩu thành công }
-        '400': { description: Token không hợp lệ }
+        "200": { description: Đặt lại mật khẩu thành công }
+        "400": { description: Token không hợp lệ }
 
   # --- Roadmap Paths ---
   /roadmaps/generate:
@@ -226,11 +288,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RoadmapInput'
+              $ref: "#/components/schemas/RoadmapInput"
       responses:
-        '201':
+        "201":
           description: Tạo và lưu lộ trình thành công
-        '500':
+        "500":
           description: Lỗi từ AI hoặc server
 
   /roadmaps:
@@ -240,7 +302,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200': { description: Mảng chứa lịch sử lộ trình }
+        "200": { description: Mảng chứa lịch sử lộ trình }
 
   /roadmaps/{id}:
     get:
@@ -254,8 +316,8 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        '200': { description: Dữ liệu chi tiết của lộ trình }
-        '404': { description: Không tìm thấy }
+        "200": { description: Dữ liệu chi tiết của lộ trình }
+        "404": { description: Không tìm thấy }
     delete:
       summary: Xóa một lộ trình
       tags: [Roadmaps]
@@ -267,7 +329,7 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        '200': { description: Xóa thành công }
+        "200": { description: Xóa thành công }
     put:
       summary: Lưu lại lộ trình đã sửa
       tags: [Roadmaps]
@@ -283,9 +345,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RoadmapResult'
+              $ref: "#/components/schemas/RoadmapResult"
       responses:
-        '200': { description: Cập nhật thành công }
+        "200": { description: Cập nhật thành công }
 
   /roadmaps/review:
     post:
@@ -303,7 +365,7 @@ paths:
                 original_roadmap: { type: object }
                 modified_roadmap: { type: object }
       responses:
-        '200': { description: Phản hồi từ AI }
+        "200": { description: Phản hồi từ AI }
 
   # --- Suggestion Paths ---
   /suggestions/goals:
@@ -311,7 +373,7 @@ paths:
       summary: Lấy danh sách mục tiêu nghề nghiệp
       tags: [Suggestions]
       responses:
-        '200': { description: Mảng chứa các mục tiêu }
+        "200": { description: Mảng chứa các mục tiêu }
 
   /suggestions/skills:
     get:
@@ -325,7 +387,7 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        '200': { description: Mảng chứa các kỹ năng gợi ý }
+        "200": { description: Mảng chứa các kỹ năng gợi ý }
 
   # --- Admin Paths ---
   /admin/logs:
@@ -345,8 +407,8 @@ paths:
           in: query
           schema: { type: string }
       responses:
-        '200': { description: Mảng chứa các log }
-        '403': { description: Không có quyền }
+        "200": { description: Mảng chứa các log }
+        "403": { description: Không có quyền }
 
   /admin/logs/{id}:
     get:
@@ -360,8 +422,8 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        '200': { description: Dữ liệu chi tiết của log }
-        '404': { description: Không tìm thấy }
+        "200": { description: Dữ liệu chi tiết của log }
+        "404": { description: Không tìm thấy }
 
   /admin/users:
     get:
@@ -370,8 +432,8 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200': { description: Mảng chứa các người dùng }
-        '403': { description: Không có quyền }
+        "200": { description: Mảng chứa các người dùng }
+        "403": { description: Không có quyền }
 
   /admin/users/{id}:
     get:
@@ -385,8 +447,8 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        '200': { description: Dữ liệu chi tiết của người dùng }
-        '404': { description: Không tìm thấy }
+        "200": { description: Dữ liệu chi tiết của người dùng }
+        "404": { description: Không tìm thấy }
 
   /admin/users/{id}/status:
     put:
@@ -408,7 +470,7 @@ paths:
               properties:
                 is_active: { type: boolean, example: false }
       responses:
-        '200': { description: Cập nhật thành công }
+        "200": { description: Cập nhật thành công }
 
   /admin/users/{id}/role:
     put:
@@ -428,9 +490,9 @@ paths:
             schema:
               type: object
               properties:
-                role: { type: string, enum: [user, admin], example: 'admin' }
+                role: { type: string, enum: [user, admin], example: "admin" }
       responses:
-        '200': { description: Cập nhật thành công }
+        "200": { description: Cập nhật thành công }
 
   /admin/stats/dashboard:
     get:
@@ -439,7 +501,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200': { description: Dữ liệu thống kê tổng quan }
+        "200": { description: Dữ liệu thống kê tổng quan }
 
   /admin/stats/popular-goals:
     get:
@@ -448,7 +510,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200': { description: Mảng chứa thống kê các mục tiêu }
+        "200": { description: Mảng chứa thống kê các mục tiêu }
 
   /admin/stats/study-time:
     get:
@@ -457,7 +519,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200': { description: Dữ liệu thống kê thời gian học }
+        "200": { description: Dữ liệu thống kê thời gian học }
 
   /admin/stats/popular-skills:
     get:
@@ -466,4 +528,4 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200': { description: Mảng chứa thống kê các kỹ năng }
+        "200": { description: Mảng chứa thống kê các kỹ năng }

@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const crypto = require('crypto');
+const crypto = require("crypto");
 const { ROLES, PROFILE_OPTIONS, TOKEN_EXPIRY } = require("../config/constants");
 
 // FIX: Thêm _id vào schema của topic để dễ dàng truy vấn
@@ -48,15 +48,26 @@ const roadmapHistorySchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema(
   {
+    fullname :{
+      type: String,
+    },
+    username: {
+      type: String,
+      required: [true, "Username is required"],
+      unique: true,
+      trim: true,
+    },
     email: {
       type: String,
-      required: true,
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
     },
     password: {
       type: String,
-      required: true,
+      // required: [true, "Password is required"],
+      minlength: 6,
+      select: false,
     },
     role: {
       type: String,
@@ -74,6 +85,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    googleId: {
+      type: String,
+    },
+    githubId: {
+      type: String,
+    },
+    avatar: {
+      type: String,
+    },
     profile: {
       learning_style: {
         type: String,
@@ -86,8 +106,8 @@ const userSchema = new mongoose.Schema(
         default: "serious",
       },
       preferred_languages: {
-        type: [String],
-        default: ["Vietnamese", "English"],
+        type: String,
+        default: "Vietnamese",
       },
     },
     created_at: {
@@ -99,14 +119,19 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-
-// Mã hóa mật khẩu trước khi lưu
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
-    return next();
+userSchema.pre('save', async function (next) {
+  // 1. Hash password nếu nó được thay đổi
+  if (this.isModified('password') && this.password) {
+    const salt = await bcrypt.genSalt(10); // Hoặc dùng process.env.BCRYPT_SALT_ROUNDS
+    this.password = await bcrypt.hash(this.password, salt);
   }
-  const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_SALT_ROUNDS));
-  this.password = await bcrypt.hash(this.password, salt);
+
+  // 2. Tạo/Cập nhật avatar từ Gravatar dựa trên email
+  if ((this.isNew || this.isModified('email')) && (!this.avatar || this.avatar.includes('gravatar.com'))) {
+    const hash = crypto.createHash('md5').update(this.email.toLowerCase().trim()).digest('hex');
+    this.avatar = `https://gravatar.com/avatar/${hash}?d=retro&r=g`;
+  }
+
   next();
 });
 
@@ -115,17 +140,23 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-userSchema.methods.createVerificationToken = function() {
-    const token = crypto.randomBytes(32).toString('hex');
-    this.verification_token = crypto.createHash('sha256').update(token).digest('hex');
-    return token;
+userSchema.methods.createVerificationToken = function () {
+  const token = crypto.randomBytes(32).toString("hex");
+  this.verification_token = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+  return token;
 };
 
-userSchema.methods.createPasswordResetToken = function() {
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    this.password_reset_token = crypto.createHash('sha256').update(resetToken).digest('hex');
-    this.password_reset_expires = Date.now() + TOKEN_EXPIRY.PASSWORD_RESET;
-    return resetToken;
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  this.password_reset_token = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  this.password_reset_expires = Date.now() + TOKEN_EXPIRY.PASSWORD_RESET;
+  return resetToken;
 };
 
 const User = mongoose.model("User", userSchema);

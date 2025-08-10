@@ -1,6 +1,10 @@
 const userRepository = require("../repositories/userRepository");
-const generateToken = require("../utils/generateToken");
+const {generateToken, generateMergeToken} = require("../utils/generateToken");
 const sendEmail = require("../utils/emailService");
+const asyncHandler = require('express-async-handler');
+const jwt = require('jsonwebtoken');
+const passport = require('passport');
+const User = require('../models/userModel');
 
 // @desc    Đăng ký người dùng mới
 // @route   POST /api/v1/auth/register
@@ -151,7 +155,12 @@ const getUserProfile = async (req, res) => {
   // req.user được gắn từ middleware
   res.json({
     id: req.user._id,
+    fullname: req.user.fullname,
+    username: req.user.username,
     email: req.user.email,
+    avatar: req.user.avatar,
+    googleId: req.user.googleId,
+    githubId: req.user.githubId,
     is_verified: req.user.is_verified,
     is_active: req.user.is_active,
     ...(req.user.role === "admin" && { role: req.user.role }),
@@ -166,12 +175,13 @@ const updateUserProfile = async (req, res) => {
   const user = await userRepository.findById(req.user._id);
 
   if (user) {
-    user.profile.learning_style =
-      req.body.learning_style || user.profile.learning_style;
+    user.profile.learning_style = req.body.learning_style || user.profile.learning_style;
     user.profile.weekly_goal = req.body.weekly_goal || user.profile.weekly_goal;
-    user.profile.preferred_languages =
-      req.body.preferred_languages || user.profile.preferred_languages;
-
+    user.profile.preferred_languages = req.body.preferred_languages || user.profile.preferred_languages;
+    user.fullname = req.body.fullname || user.fullname;
+    user.googleId = req.body.googleId || user.googleId;
+    user.githubId = req.body.githubId || user.githubId;
+    // user.avatar = req.body.avatar || user.avatar;
     const updatedUser = await user.save();
     res.json({
       message: "Cập nhật profile thành công.",
@@ -210,6 +220,113 @@ const changePassword = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Xử lý callback từ Google/GitHub với logic tùy chỉnh
+ */
+const handleSocialLoginCallback = (req, res, next) => {
+  // Xác định provider từ URL
+  const provider = req.path.includes('/google/') ? 'google' : 'github';
+  
+  passport.authenticate(provider, { session: false }, (err, user, info) => {
+    if (err) {
+      return res.redirect(`${process.env.FRONTEND_URL}/login-failed?error=${err.message}`);
+    }
+
+    // Trường hợp 1: Đăng nhập thành công (user mới hoặc đã liên kết)
+    if (user) {
+      const token = generateToken(user._id);
+      return res.redirect(`${process.env.FRONTEND_URL}/login-success?token=${token}`);
+    }
+
+    // Trường hợp 2: Xung đột tài khoản, cần xác nhận
+    if (info && info.conflict) {
+      // Tạo token tạm thời chứa thông tin cần thiết để liên kết
+      const mergeToken = generateMergeToken(info);
+      // Chuyển hướng đến trang xác nhận của frontend
+      return res.redirect(`${process.env.FRONTEND_URL}/confirm-account-link?token=${mergeToken}`);
+    }
+
+    // Trường hợp khác
+    return res.redirect(`${process.env.FRONTEND_URL}/login-failed?error=unknown`);
+
+  })(req, res, next);
+};
+
+
+/**
+ * @desc    Lấy thông tin chi tiết để hiển thị trên trang xác nhận
+ * @route   POST /api/v1/auth/link/details
+ */
+const getLinkConfirmationDetails = asyncHandler(async (req, res) => {
+    const { token } = req.body;
+    if (!token) throw new Error('Token is required');
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const existingUser = await User.findById(decoded.existingUserId).select('fullname avatar');
+
+    if (!existingUser) throw new Error('User not found');
+
+    res.json({
+        existingProfile: {
+            fullname: existingUser.fullname,
+            avatar: existingUser.avatar
+        },
+        socialProfile: {
+            fullname: decoded.socialProfile.fullname,
+            avatar: decoded.socialProfile.avatar
+        }
+    });
+});
+
+
+/**
+ * @desc    Hoàn tất việc liên kết tài khoản sau khi người dùng xác nhận
+ * @route   POST /api/v1/auth/link/complete
+ */
+const completeAccountLink = asyncHandler(async (req, res) => {
+    const { token, choices } = req.body; // choices: { fullname: 'social', avatar: 'existing' }
+    if (!token || !choices) throw new Error('Token and choices are required');
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.existingUserId);
+
+    if (!user) throw new Error('User not found');
+
+    // Cập nhật thông tin dựa trên lựa chọn của người dùng
+    if (choices.fullname === 'social') {
+        user.fullname = decoded.socialProfile.fullname;
+    }
+    if (choices.avatar === 'social') {
+        user.avatar = decoded.socialProfile.avatar;
+    }
+
+    // Liên kết tài khoản
+    const socialIdField = `${decoded.provider}Id`;
+    user[socialIdField] = decoded.socialProfile.id;
+
+    // Đảm bảo username tồn tại
+    if (!user.username) {
+        const usernameFromEmail = user.email.split('@')[0];
+        user.username = `${usernameFromEmail}-${Math.floor(Math.random() * 1000)}`;
+    }
+
+    await user.save();
+
+    // Tạo token đăng nhập cuối cùng
+    const loginToken = generateToken(user._id);
+
+    res.json({
+        message: 'Account linked successfully!',
+        token: loginToken,
+        user: {
+            _id: user._id,
+            username: user.username,
+            fullname: user.fullname,
+            avatar: user.avatar
+        }
+    });
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -220,4 +337,7 @@ module.exports = {
   forgotPassword,
   resetPassword,
   sendVerificationEmail,
+  handleSocialLoginCallback,
+  completeAccountLink,
+  getLinkConfirmationDetails,
 };

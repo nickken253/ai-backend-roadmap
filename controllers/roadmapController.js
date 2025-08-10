@@ -31,16 +31,16 @@ const generateRoadmap = async (req, res) => {
         1.  **Analyze & Plan:** Based on the user's context, create a logical, phased learning roadmap.
         2.  **Generate Roadmap Details:** For each phase, provide a title, duration, and a list of specific topics. For each topic, provide a name, a short description, and 2-3 learning resources tailored to the user's learning style (e.g., suggest video courses for 'visual' learners, interactive platforms for 'practical' learners).
         3.  **Generate React Flow Data:** Create a 'reactFlowData' object. It must contain:
-            - An array of 'nodes'. Each node represents a phase and must have an 'id' (e.g., "phase1"), a 'type' (use 'input' for the first node, 'default' for others), a 'position' (arrange them logically, e.g., x: 250, y: 5 + index * 120), and a 'data' object with a 'label' (e.g., "Phase 1: Foundations").
+            - An array of 'nodes'. Each node represents a phase and must have an 'id' (e.g., "phase1"), a 'type' (use 'input' for the first node, 'default' for others), a 'position' (arrange them logically, e.g., x: 250, y: 5 + index * 120), and a 'data' object with a 'label' (e.g., "Phase 1: Node.js") and a 'description' (e.g., "A back-end JavaScript runtime environment that runs on the V8 engine and executes JavaScript code outside a web browser").
             - An array of 'edges' to connect the nodes sequentially. Each edge must have an 'id' (e.g., "e1-2"), a 'source' id, a 'target' id, and can have 'type: 'smoothstep''.
-        4.  **Final Output:** Combine everything into a single, valid JSON object following the specified schema. DO NOT include any markdown, comments, or any text outside of the final JSON object. AND content will display in Vietnamese.
+        4.  **Final Output:** Combine everything into a single, valid JSON object following the specified schema. DO NOT include any markdown, comments, or any text outside of the final JSON object. AND content will display in ${user.profile.preferred_languages || 'Vietnamese'}.
 
         **EXAMPLE JSON SCHEMA (Follow this structure strictly):**
         \`\`\`json
         {
           "reactFlowData": {
             "nodes": [
-              { "id": "phase1", "type": "input", "position": { "x": 250, "y": 5 }, "data": { "label": "Phase 1: Title" } }
+              { "id": "phase1", "type": "input", "position": { "x": 250, "y": 5 }, "data": { "label": "Phase 1: Title", "description": "A paragraph providing a detailed description of the content to be included and the tasks to be carried out in this section, with a length of about 300 words."  } }
             ],
             "edges": []
           },
@@ -55,7 +55,7 @@ const generateRoadmap = async (req, res) => {
                 "topics": [
                   {
                     "name": "Topic Name",
-                    "description": "Topic description.",
+                    "description": "Topic detailed description.",
                     "resources": [
                       { "type": "Course", "title": "Resource Title", "url": "http://example.com" }
                     ]
@@ -220,7 +220,7 @@ const reviewRoadmap = async (req, res) => {
         2.  Provide an 'overall_comment' summarizing the quality of the user's edits.
         3.  Provide an array of 'analysis_points'. Each object in this array should represent a single topic or phase that was changed.
         4.  Inside each 'analysis_point', provide a 'topic_name' and an array of 'changes'. Each object in the 'changes' array represents a specific piece of feedback (positive, warning, or suggestion) for that topic. This allows grouping multiple feedback points for the same topic.
-        5.  Respond with ONLY a valid JSON object following the schema. Do not add any text outside the JSON object.
+        5.  Respond with ONLY a valid JSON object following the schema. Do not add any text outside the JSON object. AND content will display in ${user.profile.preferred_languages || 'Vietnamese'}.
 
         **JSON SCHEMA (Strictly follow this):**
         \`\`\`json

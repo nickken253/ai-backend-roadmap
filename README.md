@@ -88,9 +88,9 @@
     STATS_LIMIT=10
 
     # Cấu hình Gửi mail (Google OAuth2)
-    GOOGLE_MAILER_CLIENT_ID=your_google_oauth_client_id
-    GOOGLE_MAILER_CLIENT_SECRET=your_google_oauth_client_secret
-    GOOGLE_MAILER_REFRESH_TOKEN=your_google_oauth_refresh_token
+    GOOGLE_CLIENT_ID=your_google_oauth_client_id
+    GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+    GOOGLE_REFRESH_TOKEN=your_google_oauth_refresh_token
     ADMIN_EMAIL_ADDRESS=your-gmail-address@gmail.com
 
     # Cấu hình Redis
@@ -114,9 +114,9 @@
 
 2.  **Chế độ Production:** \* Để chạy ở chế độ production, bạn nên sử dụng một công cụ quản lý tiến trình như `pm2`.
     `bash
-    npm install -g pm2
-    pm2 start index.js --name "ai-roadmap-backend"
-    `
+npm install -g pm2
+pm2 start index.js --name "ai-roadmap-backend"
+`
     Sau khi khởi động thành công, server sẽ chạy tại `http://localhost:5001`.
 
 ## 📖 Tài liệu API
