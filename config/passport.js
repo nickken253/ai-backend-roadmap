@@ -24,7 +24,7 @@
 //           existingUserByEmail.googleId = profile.id;
 //           existingUserByEmail.avatar = profile.photos[0].value;
 //           existingUserByEmail.fullname = existingUserByEmail.fullname || profile.displayName;
-          
+
 //           // FIX: Xử lý trường hợp user cũ trong DB không có username
 //           if (!existingUserByEmail.username) {
 //             const usernameFromEmail = existingUserByEmail.email.split('@')[0];
@@ -34,7 +34,6 @@
 //           await existingUserByEmail.save();
 //           return done(null, existingUserByEmail);
 //         }
-
 
 //         // Tạo user mới
 
@@ -135,10 +134,20 @@
 //   }
 // });
 
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const GitHubStrategy = require('passport-github2').Strategy;
-const User = require('../models/userModel');
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const GitHubStrategy = require("passport-github2").Strategy;
+const User = require("../models/userModel");
+
+const googleCallbackURL =
+  process.env.NODE_ENV === "production"
+    ? `${process.env.SERVER_URL}/api/v1/auth/google/callback`
+    : "/api/v1/auth/google/callback";
+
+const githubCallbackURL =
+  process.env.NODE_ENV === "production"
+    ? `${process.env.SERVER_URL}/api/v1/auth/github/callback`
+    : "/api/v1/auth/github/callback";
 
 // --- HÀM TRỢ GIÚP ---
 const handleSocialLogin = async (provider, profile, done) => {
@@ -176,9 +185,15 @@ const handleSocialLogin = async (provider, profile, done) => {
     }
 
     // 3. Tạo user mới hoàn toàn
-    const usernameFromProfile = (profile.username || (profile.displayName ? profile.displayName.replace(/\s/g, '').toLowerCase() : null));
-    const usernameFromEmail = email.split('@')[0];
-    const finalUsername = `${usernameFromProfile || usernameFromEmail}-${Math.floor(Math.random() * 1000)}`;
+    const usernameFromProfile =
+      profile.username ||
+      (profile.displayName
+        ? profile.displayName.replace(/\s/g, "").toLowerCase()
+        : null);
+    const usernameFromEmail = email.split("@")[0];
+    const finalUsername = `${
+      usernameFromProfile || usernameFromEmail
+    }-${Math.floor(Math.random() * 1000)}`;
 
     const newUser = await User.create({
       [socialIdField]: profile.id,
@@ -188,7 +203,7 @@ const handleSocialLogin = async (provider, profile, done) => {
       is_verified: true,
       avatar: profile.photos && profile.photos[0].value,
       profile: {
-        preferred_languages: 'Vietnamese',
+        preferred_languages: "Vietnamese",
       },
     });
     return done(null, newUser);
@@ -197,23 +212,31 @@ const handleSocialLogin = async (provider, profile, done) => {
   }
 };
 
-
 // --- STRATEGIES ---
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: '/api/v1/auth/google/callback',
-  }, (accessToken, refreshToken, profile, done) => handleSocialLogin('google', profile, done))
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: googleCallbackURL,
+    },
+    (accessToken, refreshToken, profile, done) =>
+      handleSocialLogin("google", profile, done)
+  )
 );
 
-passport.use(new GitHubStrategy({
-    clientID: process.env.GITHUB_CLIENT_ID,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: '/api/v1/auth/github/callback',
-    scope: ['user:email'],
-  }, (accessToken, refreshToken, profile, done) => handleSocialLogin('github', profile, done))
+passport.use(
+  new GitHubStrategy(
+    {
+      clientID: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackURL: githubCallbackURL,
+      scope: ["user:email"],
+    },
+    (accessToken, refreshToken, profile, done) =>
+      handleSocialLogin("github", profile, done)
+  )
 );
-
 
 // Serialize & Deserialize
 passport.serializeUser((user, done) => {
