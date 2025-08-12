@@ -43,7 +43,7 @@
 1.  **Clone kho chứa mã nguồn này:**
 
     ```bash
-    git clone [https://your-repository-url.git](https://your-repository-url.git)
+    git clone [https://github.com/nickken253/ai-backend-roadmap](https://github.com/nickken253/ai-backend-roadmap)
     cd ai-backend-roadmap
     ```
 
