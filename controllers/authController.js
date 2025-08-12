@@ -175,9 +175,9 @@ const updateUserProfile = async (req, res) => {
   const user = await userRepository.findById(req.user._id);
 
   if (user) {
-    user.profile.learning_style = req.body.learning_style || user.profile.learning_style;
-    user.profile.weekly_goal = req.body.weekly_goal || user.profile.weekly_goal;
-    user.profile.preferred_languages = req.body.preferred_languages || user.profile.preferred_languages;
+    user.profile.learning_style = req.body.profile.learning_style || user.profile.learning_style;
+    user.profile.weekly_goal = req.body.profile.weekly_goal || user.profile.weekly_goal;
+    user.profile.preferred_languages = req.body.profile.preferred_languages || user.profile.preferred_languages;
     user.fullname = req.body.fullname || user.fullname;
     user.googleId = req.body.googleId || user.googleId;
     user.githubId = req.body.githubId || user.githubId;
@@ -185,7 +185,10 @@ const updateUserProfile = async (req, res) => {
     const updatedUser = await user.save();
     res.json({
       message: "Cập nhật profile thành công.",
-      profile: updatedUser.profile,
+      data: {
+        fullname: updatedUser.fullname,
+        profile: updatedUser.profile
+      },
     });
   } else {
     res.status(404).json({ message: "Không tìm thấy người dùng." });

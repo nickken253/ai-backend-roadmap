@@ -55,7 +55,7 @@ const generateRoadmap = async (req, res) => {
                 "topics": [
                   {
                     "name": "Topic Name",
-                    "description": "Topic detailed description.",
+                    "description": "A paragraph providing a detailed description of the content to be included and the tasks to be carried out in this section, with a length of about 300 words.",
                     "resources": [
                       { "type": "Course", "title": "Resource Title", "url": "http://example.com" }
                     ]
