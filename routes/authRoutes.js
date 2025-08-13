@@ -33,8 +33,6 @@ router.put("/reset-password/:token", resetPassword);
 router.post("/forgot-password", forgotPassword);
 router.post("/send-verification", protect, sendVerificationEmail);
 
-// === SOCIAL LOGIN ROUTES ===
-
 // Sử dụng một hàm callback tùy chỉnh để xử lý các trường hợp khác nhau
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', handleSocialLoginCallback);

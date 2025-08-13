@@ -71,21 +71,51 @@ const sendVerificationEmail = async (req, res) => {
 // @route   POST /api/v1/auth/login
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
-  const user = await userRepository.findByEmail(email);
 
-  if (user && (await user.matchPassword(password))) {
+  try {
+    // Lấy user kèm password (nếu schema có select: false)
+    const user = await userRepository.findByEmail(email, true); 
+
+    if (!user) {
+      return res
+        .status(401)
+        .json({ message: "Không tồn tại người dùng" });
+    }
+
+    // Chặn đăng nhập bằng mật khẩu nếu tài khoản OAuth
+    if (!user.password) {
+      return res.status(401).json({
+        message:
+          "Tài khoản này được tạo qua đăng nhập mạng xã hội, chưa thể đăng nhập bằng mật khẩu.",
+      });
+    }
+
+    // Kiểm tra mật khẩu
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res
+        .status(401)
+        .json({ message: "Mật khẩu không chính xác." });
+    }
+
+    // Kiểm tra trạng thái hoạt động
     if (!user.is_active) {
       return res.status(403).json({
         message:
           "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
       });
     }
-    res.json({
+
+    // Đăng nhập thành công
+    return res.json({
       message: "Đăng nhập thành công!",
       token: generateToken(user._id),
     });
-  } else {
-    res.status(401).json({ message: "Email hoặc mật khẩu không chính xác." });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại sau." });
   }
 };
 

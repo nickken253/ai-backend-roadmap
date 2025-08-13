@@ -53,7 +53,7 @@ const userSchema = new mongoose.Schema(
     },
     username: {
       type: String,
-      required: [true, "Username is required"],
+      // required: [true, "Username is required"],
       unique: true,
       trim: true,
     },
@@ -67,7 +67,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       // required: [true, "Password is required"],
       minlength: 6,
-      select: false,
+      // select: false,
     },
     role: {
       type: String,
